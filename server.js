@@ -14,10 +14,30 @@ function isAlphabetic(str) {
   return /^[A-Za-z]+$/.test(str);
 }
 
+function isSpecialCharacter(str) {
+  return !/^[A-Za-z0-9]+$/.test(str);
+}
+
+app.get('/', (req, res) => {
+  res.json({
+    message: "BFHL API is running!",
+    student: "22BEC0885",
+    endpoints: {
+      "POST /bfhl": "Main API endpoint",
+      "GET /bfhl": "Operation code endpoint"
+    }
+  });
+});
+
+app.get('/bfhl', (req, res) => {
+  res.status(200).json({
+    operation_code: 1
+  });
+});
+
 app.post('/bfhl', (req, res) => {
   try {
     const { data } = req.body;
-    
     if (!data || !Array.isArray(data)) {
       return res.status(400).json({
         is_success: false,
@@ -25,22 +45,38 @@ app.post('/bfhl', (req, res) => {
       });
     }
 
-    const numbers = [];
+    const oddNumbers = [];
+    const evenNumbers = [];
     const alphabets = [];
-    let highestAlphabet = '';
+    const specialCharacters = [];
+    let sum = 0;
+    const allAlphabets = [];
 
     data.forEach(item => {
       const itemStr = String(item).trim();
 
       if (isNumeric(itemStr)) {
-        numbers.push(itemStr);
-      } else if (isAlphabetic(itemStr) && itemStr.length === 1) {
-        alphabets.push(itemStr);
-        
-        if (!highestAlphabet || itemStr.toUpperCase() > highestAlphabet.toUpperCase()) {
-          highestAlphabet = itemStr;
+        const num = parseInt(itemStr);
+        sum += num;
+        if (num % 2 === 0) {
+          evenNumbers.push(itemStr);
+        } else {
+          oddNumbers.push(itemStr);
         }
+      } else if (isAlphabetic(itemStr)) {
+        alphabets.push(itemStr.toUpperCase());
+        for (let char of itemStr) {
+          allAlphabets.push(char);
+        }
+      } else if (isSpecialCharacter(itemStr)) {
+        specialCharacters.push(itemStr);
       }
+    });
+
+    let concatString = '';
+    allAlphabets.reverse();
+    allAlphabets.forEach((char, index) => {
+      concatString += index % 2 === 0 ? char.toUpperCase() : char.toLowerCase();
     });
 
     const response = {
@@ -48,15 +84,17 @@ app.post('/bfhl', (req, res) => {
       user_id: "ayush_tiwari_25072005",
       email: "ayush.tiwari2022@vitstudent.ac.in",
       roll_number: "22BEC0885",
-      numbers: numbers,
+      odd_numbers: oddNumbers,
+      even_numbers: evenNumbers,
       alphabets: alphabets,
-      highest_alphabet: highestAlphabet ? [highestAlphabet] : []
+      special_characters: specialCharacters,
+      sum: sum.toString(),
+      concat_string: concatString
     };
 
     res.status(200).json(response);
 
   } catch (error) {
-    console.error('Error processing request:', error);
     res.status(500).json({
       is_success: false,
       message: "Internal server error"
@@ -66,9 +104,7 @@ app.post('/bfhl', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 API endpoint: http://localhost:${PORT}/bfhl`);
-  console.log(`🎯 Roll Number: 22BEC0885`);
+  console.log(`Server running on port ${PORT}`);
 });
 
 module.exports = app;
